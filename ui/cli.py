@@ -5,6 +5,7 @@ Refactored to use the Service Layer.
 
 from __future__ import annotations
 import sys
+import multiprocessing as mp
 import numpy as np
 
 from core import OrbitalParams, GroverParams, VQEParams
@@ -59,11 +60,13 @@ class CLInterface:
             # If phase is needed, we'd call compute_phase, which we should move to service too
             # For now, density is the default value in SimulationResult.values
             
-            render_orbital(
-                np.array(result.points),
-                np.array(result.values),
-                title=f"{result.title} (Seed: {seed})",
+            p = mp.Process(
+                target=render_orbital,
+                args=(np.array(result.points), np.array(result.values)),
+                kwargs={"title": f"{result.title} (Seed: {seed})"},
             )
+            p.start()
+            p.join()
         except Exception as e:
             print(f"  ✗ Error: {e}")
 
@@ -82,12 +85,17 @@ class CLInterface:
         print(f"\n  ➤ E = {energy:.2f} ℏω")
 
         points, values = sample_harmonic_3d(nx, ny, nz, n_pts)
-        quick_plot(
-            points,
-            scalars=values,
-            title=f"Harmonic Oscillator ({nx},{ny},{nz})",
-            cmap="plasma",
+        p = mp.Process(
+            target=quick_plot,
+            args=(points,),
+            kwargs={
+                "scalars": values,
+                "title": f"Harmonic Oscillator ({nx},{ny},{nz})",
+                "cmap": "plasma",
+            },
         )
+        p.start()
+        p.join()
 
     def run_grover(self):
         n_qubits = int(input("\n  Number of qubits [3]: ").strip() or "3")
@@ -128,7 +136,12 @@ class CLInterface:
         from visualization.bloch_sphere import render_bloch_sphere
         theta = float(input("  θ (polar) [0.785]: ").strip() or "0.785")
         phi = float(input("  φ (azimuthal) [0.0]: ").strip() or "0.0")
-        render_bloch_sphere(theta=theta, phi=phi)
+        p = mp.Process(
+            target=render_bloch_sphere,
+            kwargs={"theta": theta, "phi": phi},
+        )
+        p.start()
+        p.join()
 
     def start_server(self):
         import uvicorn
