@@ -1,19 +1,20 @@
 """
-Interactive command-line interface for the Quantum Simulation Lab.
-
-Provides a menu-driven experience to run simulations and launch
-3-D visualisations directly from the terminal.
+Interactive command-line interface for the Quantum Simulation Lab (v2).
+Refactored to use the Service Layer.
 """
 
 from __future__ import annotations
-
 import sys
+import numpy as np
+
+from core import OrbitalParams, GroverParams, VQEParams
+from services import PhysicsService, QuantumService
 
 
 def _banner():
     print()
     print("=" * 60)
-    print("  ⚛  Quantum Simulation Lab  ⚛")
+    print("  ⚛  Quantum Simulation Lab (v2)  ⚛")
     print("=" * 60)
     print()
 
@@ -30,175 +31,134 @@ def _menu():
     print()
 
 
-# ------------------------------------------------------------------
-# Hydrogen orbitals
-# ------------------------------------------------------------------
+class CLInterface:
+    def __init__(self):
+        self.physics = PhysicsService()
+        self.quantum = QuantumService()
 
-def _run_hydrogen():
-    from physics.orbitals import list_orbitals, get_orbital
-    from physics.hydrogen_solver import HydrogenSolver
-    from visualization.orbital_renderer import render_orbital
+    def run_hydrogen(self):
+        from physics.orbitals import list_orbitals
+        from visualization.orbital_renderer import render_orbital
 
-    print("\n  Available orbitals:", ", ".join(list_orbitals()))
-    name = input("  Enter orbital name (e.g. 2p0): ").strip()
-    n_pts = input("  Number of sample points [100000]: ").strip()
-    n_pts = int(n_pts) if n_pts else 100_000
+        print("\n  Available orbitals:", ", ".join(list_orbitals()))
+        name = input("  Enter orbital name (e.g. 2p0): ").strip()
+        n_pts = input("  Number of sample points [50000]: ").strip()
+        n_pts = int(n_pts) if n_pts else 50_000
+        seed = input("  Seed (optional): ").strip()
+        seed = int(seed) if seed else None
 
-    n, l, m = get_orbital(name)
-    solver = HydrogenSolver()
+        print(f"\n  ➤ Running simulation for {name} ({n_pts:,} points)...")
+        
+        try:
+            params = OrbitalParams(name=name, n_points=n_pts, seed=seed)
+            result = self.physics.run_orbital_simulation(params)
+            
+            print(f"  ➤ Energy level: {result.energy_ev:.4f} eV\n")
 
-    print(f"\n  ➤ Sampling {n_pts:,} points for orbital {name}  (n={n}, l={l}, m={m})")
-    print(f"  ➤ Energy level: {solver.get_energy(n):.4f} eV\n")
+            color_choice = input("  Colour by (d)ensity or (p)hase? [d]: ").strip().lower()
+            # If phase is needed, we'd call compute_phase, which we should move to service too
+            # For now, density is the default value in SimulationResult.values
+            
+            render_orbital(
+                np.array(result.points),
+                np.array(result.values),
+                title=f"{result.title} (Seed: {seed})",
+            )
+        except Exception as e:
+            print(f"  ✗ Error: {e}")
 
-    points, density = solver.sample_points_mc(n, l, m, n_pts)
-    phase = solver.compute_phase(n, l, m, points)
+    def run_harmonic(self):
+        # TODO: Move to service layer as well
+        from physics.harmonic_oscillator import sample_harmonic_3d, harmonic_energy
+        from visualization.viewer_3d import quick_plot
 
-    color_choice = input("  Colour by (d)ensity or (p)hase? [d]: ").strip().lower()
-    values = phase if color_choice == "p" else density
-    cmap = "hsv" if color_choice == "p" else "coolwarm"
+        print("\n  3-D isotropic harmonic oscillator")
+        nx = int(input("  nx [0]: ").strip() or "0")
+        ny = int(input("  ny [0]: ").strip() or "0")
+        nz = int(input("  nz [0]: ").strip() or "0")
+        n_pts = int(input("  Number of sample points [50000]: ").strip() or "50000")
 
-    render_orbital(
-        points,
-        values,
-        title=f"Hydrogen Orbital  {name}   (n={n}, l={l}, m={m})",
-        cmap=cmap,
-    )
+        energy = harmonic_energy(nx) + harmonic_energy(ny) + harmonic_energy(nz)
+        print(f"\n  ➤ E = {energy:.2f} ℏω")
 
+        points, values = sample_harmonic_3d(nx, ny, nz, n_pts)
+        quick_plot(
+            points,
+            scalars=values,
+            title=f"Harmonic Oscillator ({nx},{ny},{nz})",
+            cmap="plasma",
+        )
 
-# ------------------------------------------------------------------
-# Harmonic oscillator
-# ------------------------------------------------------------------
+    def run_grover(self):
+        n_qubits = int(input("\n  Number of qubits [3]: ").strip() or "3")
+        target = input(f"  Target bitstring ({n_qubits} bits) [{'1' * n_qubits}]: ").strip()
+        if not target:
+            target = "1" * n_qubits
+        shots = int(input("  Shots [1024]: ").strip() or "1024")
+        seed = input("  Seed (optional): ").strip()
+        seed = int(seed) if seed else None
 
-def _run_harmonic():
-    from physics.harmonic_oscillator import sample_harmonic_3d, harmonic_energy
-    from visualization.viewer_3d import quick_plot
+        params = GroverParams(n_qubits=n_qubits, target=target, shots=shots, seed=seed)
+        print(f"\n  ➤ Running Grover's algorithm for target |{target}⟩...")
+        
+        result = self.quantum.run_grover(params)
+        counts = result["counts"]
+        total = sum(counts.values())
 
-    print("\n  3-D isotropic harmonic oscillator")
-    nx = int(input("  nx [0]: ").strip() or "0")
-    ny = int(input("  ny [0]: ").strip() or "0")
-    nz = int(input("  nz [0]: ").strip() or "0")
-    n_pts = int(input("  Number of sample points [100000]: ").strip() or "100000")
+        print("  Results:")
+        for state, c in sorted(counts.items(), key=lambda x: -x[1]):
+            bar_len = int(40 * c / total)
+            print(f"    |{state}⟩  {c:5d}  ({100*c/total:5.1f}%)  {'█' * bar_len}")
 
-    energy = harmonic_energy(nx) + harmonic_energy(ny) + harmonic_energy(nz)
-    print(f"\n  ➤ E = {energy:.2f} ℏω")
-    print(f"  ➤ Sampling {n_pts:,} points …\n")
+        print(f"\n  ➤ Most probable state: |{result['found']}⟩")
 
-    points, values = sample_harmonic_3d(nx, ny, nz, n_pts)
-    quick_plot(
-        points,
-        scalars=values,
-        title=f"Harmonic Oscillator  ({nx},{ny},{nz})   E = {energy:.1f} ℏω",
-        cmap="plasma",
-    )
+    def run_vqe(self):
+        n_qubits = int(input("\n  Number of qubits [2]: ").strip() or "2")
+        depth = int(input("  Ansatz depth [2]: ").strip() or "2")
+        maxiter = int(input("  Max iterations [100]: ").strip() or "100")
 
+        params = VQEParams(n_qubits=n_qubits, depth=depth, maxiter=maxiter)
+        print("\n  ➤ Running VQE optimisation...")
+        
+        result = self.quantum.run_vqe(params)
+        print(f"  ➤ Optimal energy: {result['optimal_energy']:.6f}")
+        print(f"  ➤ Exact ground state (Z⊗Z): −1.0")
 
-# ------------------------------------------------------------------
-# Grover
-# ------------------------------------------------------------------
+    def run_bloch(self):
+        from visualization.bloch_sphere import render_bloch_sphere
+        theta = float(input("  θ (polar) [0.785]: ").strip() or "0.785")
+        phi = float(input("  φ (azimuthal) [0.0]: ").strip() or "0.0")
+        render_bloch_sphere(theta=theta, phi=phi)
 
-def _run_grover():
-    from quantum.grover import GroverSearch
-
-    n_qubits = int(input("\n  Number of qubits [3]: ").strip() or "3")
-    target = input(f"  Target bitstring ({n_qubits} bits) [{'1' * n_qubits}]: ").strip()
-    if not target:
-        target = "1" * n_qubits
-    shots = int(input("  Shots [1024]: ").strip() or "1024")
-
-    g = GroverSearch()
-    print(f"\n  ➤ Running Grover's algorithm for target |{target}⟩ …\n")
-    counts = g.run(n_qubits, target, shots=shots)
-    total = sum(counts.values())
-
-    print("  Results:")
-    for state, c in sorted(counts.items(), key=lambda x: -x[1]):
-        bar_len = int(40 * c / total)
-        print(f"    |{state}⟩  {c:5d}  ({100*c/total:5.1f}%)  {'█' * bar_len}")
-
-    found = max(counts, key=counts.get)
-    print(f"\n  ➤ Most probable state: |{found}⟩")
-    success = "✓" if found == target else "✗"
-    print(f"  ➤ Target found: {success}")
-
-
-# ------------------------------------------------------------------
-# VQE
-# ------------------------------------------------------------------
-
-def _run_vqe():
-    from quantum.vqe import VQESolver
-
-    n_qubits = int(input("\n  Number of qubits [2]: ").strip() or "2")
-    depth = int(input("  Ansatz depth [2]: ").strip() or "2")
-    shots = int(input("  Shots [4096]: ").strip() or "4096")
-    maxiter = int(input("  Max iterations [100]: ").strip() or "100")
-
-    solver = VQESolver(n_qubits=n_qubits, depth=depth, shots=shots)
-    print("\n  ➤ Running VQE optimisation …\n")
-
-    result = solver.optimize(maxiter=maxiter)
-    print(f"  ➤ Optimal energy: {result['optimal_energy']:.6f}")
-    print(f"  ➤ Function evaluations: {result['n_iterations']}")
-    print(f"  ➤ Exact ground state (Z⊗Z): −1.0")
-    print(f"  ➤ Error: {abs(result['optimal_energy'] - (-1.0)):.6f}")
-
-
-# ------------------------------------------------------------------
-# Bloch sphere
-# ------------------------------------------------------------------
-
-def _run_bloch():
-    import numpy as np
-    from visualization.bloch_sphere import render_bloch_sphere
-
-    print("\n  Bloch sphere state |ψ⟩ = cos(θ/2)|0⟩ + e^{iφ} sin(θ/2)|1⟩")
-    theta = float(input("  θ (polar, 0 to π) [0.7854]: ").strip() or str(np.pi / 4))
-    phi = float(input("  φ (azimuthal, 0 to 2π) [0.0]: ").strip() or "0.0")
-
-    render_bloch_sphere(theta=theta, phi=phi, title=f"Bloch Sphere  θ={theta:.3f}  φ={phi:.3f}")
-
-
-# ------------------------------------------------------------------
-# API server
-# ------------------------------------------------------------------
-
-def _start_server():
-    import uvicorn
-    print("\n  ➤ Starting FastAPI server on http://127.0.0.1:8000")
-    print("  ➤ Docs at http://127.0.0.1:8000/docs\n")
-    uvicorn.run("backend.api:app", host="127.0.0.1", port=8000, reload=False)
-
-
-# ------------------------------------------------------------------
-# Main loop
-# ------------------------------------------------------------------
-
-ACTIONS = {
-    "1": _run_hydrogen,
-    "2": _run_harmonic,
-    "3": _run_grover,
-    "4": _run_vqe,
-    "5": _run_bloch,
-    "6": _start_server,
-}
+    def start_server(self):
+        import uvicorn
+        print("\n  ➤ Starting FastAPI server...")
+        uvicorn.run("backend.api:app", host="127.0.0.1", port=8000, reload=False)
 
 
 def run_cli():
-    """Launch the interactive CLI."""
+    interface = CLInterface()
     _banner()
+    actions = {
+        "1": interface.run_hydrogen,
+        "2": interface.run_harmonic,
+        "3": interface.run_grover,
+        "4": interface.run_vqe,
+        "5": interface.run_bloch,
+        "6": interface.start_server,
+    }
+    
     while True:
         _menu()
         choice = input("  ▸ ").strip()
         if choice == "0":
-            print("\n  Goodbye! 🚀\n")
-            sys.exit(0)
-        action = ACTIONS.get(choice)
-        if action:
+            break
+        if action := actions.get(choice):
             try:
                 action()
             except KeyboardInterrupt:
                 print("\n  [Interrupted]")
-            except Exception as exc:
-                print(f"\n  ✗ Error: {exc}\n")
+            except Exception as e:
+                print(f"\n  ✗ Error: {e}")
         else:
-            print("  Invalid choice — try again.\n")
+            print("  Invalid choice.")

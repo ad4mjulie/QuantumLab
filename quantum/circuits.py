@@ -23,6 +23,7 @@ _SIMULATOR = AerSimulator()
 def run_circuit(
     circuit: QuantumCircuit,
     shots: int = 1024,
+    seed: int | None = None,
 ) -> dict[str, int]:
     """
     Execute a quantum circuit on the Aer simulator and return raw counts.
@@ -31,12 +32,13 @@ def run_circuit(
     ----------
     circuit : QuantumCircuit – must already contain measurements
     shots   : int            – number of measurement shots
+    seed     : int            – optional seed for reproducibility
 
     Returns
     -------
     counts : dict[str, int]  – e.g. {'00': 512, '11': 512}
     """
-    job = _SIMULATOR.run(circuit, shots=shots)
+    job = _SIMULATOR.run(circuit, shots=shots, seed_simulator=seed)
     return job.result().get_counts()
 
 

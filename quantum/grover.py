@@ -123,6 +123,7 @@ class GroverSearch:
         n_qubits: int,
         target: str,
         shots: int = 1024,
+        seed: int | None = None,
     ) -> dict[str, int]:
         """
         Execute Grover's algorithm and return measurement counts.
@@ -132,20 +133,22 @@ class GroverSearch:
         n_qubits : int – number of qubits
         target   : str – target bitstring
         shots    : int – number of shots
+        seed     : int – optional seed for the Aer simulator
 
         Returns
         -------
         counts : dict[str, int]
         """
         qc = self.build_circuit(n_qubits, target)
-        return run_circuit(qc, shots=shots)
+        return run_circuit(qc, shots=shots, seed=seed)
 
     def run_probabilities(
         self,
         n_qubits: int,
         target: str,
         shots: int = 1024,
+        seed: int | None = None,
     ) -> dict[str, float]:
         """Run Grover's and return normalised probabilities."""
-        counts = self.run(n_qubits, target, shots)
+        counts = self.run(n_qubits, target, shots, seed=seed)
         return counts_to_probabilities(counts)

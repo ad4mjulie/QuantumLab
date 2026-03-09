@@ -97,6 +97,7 @@ class HydrogenSolver:
         m: int,
         n_points: int = 100_000,
         r_max: float | None = None,
+        seed: int | None = None,
     ) -> tuple[NDArray, NDArray]:
         """
         Monte-Carlo rejection sampling of the probability density |ψ|².
@@ -108,12 +109,15 @@ class HydrogenSolver:
         n, l, m   : quantum numbers
         n_points  : desired number of accepted points
         r_max     : maximum radial distance to sample
+        seed      : optional random seed for reproducibility
 
         Returns
         -------
         points : (n_points, 3) array of Cartesian coordinates
         values : (n_points,) array of |ψ|² at each point
         """
+        rng = np.random.default_rng(seed)
+
         if r_max is None:
             r_max = float(2 * n ** 2 + 10)
 
@@ -138,15 +142,15 @@ class HydrogenSolver:
 
         while total_accepted < n_points:
             # Uniform sampling in a cube
-            x = np.random.uniform(-r_max, r_max, batch)
-            y = np.random.uniform(-r_max, r_max, batch)
-            z = np.random.uniform(-r_max, r_max, batch)
+            x = rng.uniform(-r_max, r_max, batch)
+            y = rng.uniform(-r_max, r_max, batch)
+            z = rng.uniform(-r_max, r_max, batch)
 
             r, theta, phi = cartesian_to_spherical(x, y, z)
             density = probability_density(n, l, m, r, theta, phi)
 
             # Rejection step
-            u = np.random.uniform(0, max_density, batch)
+            u = rng.uniform(0, max_density, batch)
             mask = u < density
 
             accepted_pts.append(np.column_stack([x[mask], y[mask], z[mask]]))

@@ -119,24 +119,29 @@ class VQESolver:
 
         history: list[float] = []
 
-        def _callback_cobyla(xk):
+        def _callback(xk: NDArray) -> None:
             energy = self.cost_function(xk)
-            history.append(energy)
+            history.append(float(energy))
+            # print(f"  Iteration {len(history)}: {energy:.6f}") # debug
 
         result = minimize(
             self.cost_function,
             initial_params,
             method=method,
+            callback=_callback,
             options={"maxiter": maxiter},
         )
 
-        # Rebuild history from the final point if callback wasn't called
-        if not history:
-            history.append(float(result.fun))
+        # Ensure final energy is in history
+        final_energy = float(result.fun)
+        if not history or abs(history[-1] - final_energy) > 1e-6:
+            history.append(final_energy)
 
         return {
             "optimal_params": result.x,
-            "optimal_energy": float(result.fun),
+            "optimal_energy": final_energy,
             "n_iterations": result.nfev,
             "history": history,
+            "success": result.success,
+            "message": result.message
         }
