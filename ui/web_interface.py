@@ -121,11 +121,12 @@ async function runOrbital() {
   const el = document.getElementById('orbital-result');
   el.style.display = 'block'; el.textContent = 'Running…';
   const data = await post('/simulate/orbital', {
-    orbital: document.getElementById('orbital-name').value,
+    name: document.getElementById('orbital-name').value,
     n_points: parseInt(document.getElementById('orbital-pts').value)
   });
-  el.textContent = `Orbital: ${data.orbital}  (n=${data.n}, l=${data.l}, m=${data.m})\n`
-    + `Energy: ${data.energy_eV.toFixed(4)} eV\n`
+  if (data.detail) { el.textContent = 'Error: ' + JSON.stringify(data.detail); return; }
+  el.textContent = `Orbital: ${data.title}  (n=${data.metadata.n}, l=${data.metadata.l}, m=${data.metadata.m})\n`
+    + `Energy: ${data.energy_ev.toFixed(4)} eV\n`
     + `Points sampled: ${data.n_points.toLocaleString()}\n\n`
     + `(Point cloud data available via API response)`;
 }
@@ -160,11 +161,12 @@ async function runVQE() {
     depth: parseInt(document.getElementById('vqe-depth').value),
     maxiter: parseInt(document.getElementById('vqe-iter').value)
   });
+  if (data.detail) { el.textContent = 'Error: ' + JSON.stringify(data.detail); return; }
   el.textContent =
     `Optimal energy:     ${data.optimal_energy.toFixed(6)}\n`
     + `Exact ground state: -1.000000  (Z⊗Z Hamiltonian)\n`
     + `Error:              ${Math.abs(data.optimal_energy - (-1)).toFixed(6)}\n`
-    + `Function evals:     ${data.n_function_evals}`;
+    + `Function evals:     ${data.n_iterations}`;
 }
 </script>
 </body>
