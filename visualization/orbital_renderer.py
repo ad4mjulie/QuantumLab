@@ -67,16 +67,20 @@ def render_orbital(
     if show_nucleus:
         nucleus = pv.Sphere(radius=0.15, center=(0.0, 0.0, 0.0))
         plotter.add_mesh(nucleus, color="yellow", opacity=1.0)
+        
+        # Place label slightly above the nucleus sphere to prevent clipping
+        nuc_pt = np.array([[0.0, 0.0, 0.2]], dtype=np.float32)
         plotter.add_point_labels(
-            [np.array([0.0, 0.0, 0.0], dtype=np.float32)],
+            nuc_pt,
             ["Nucleus"],
-            point_size=0,
+            point_color="yellow",
+            point_size=5,
             font_size=18,
             text_color="yellow",
-            shape=None,
+            shape="rounded_rect",
+            shape_color="black",
+            shape_opacity=0.4,
             always_visible=True,
-            show_points=False,
-            margin=10,
         )
 
     # Estimate extents for standard label placement
@@ -85,16 +89,19 @@ def render_orbital(
     except ValueError:
         max_extent = 10.0
     
+    # Place cloud label at a clear visual location
+    cloud_pt = np.array([[max_extent * 0.6, max_extent * 0.6, max_extent * 0.6]], dtype=np.float32)
     plotter.add_point_labels(
-        [np.array([max_extent * 0.7, max_extent * 0.7, max_extent * 0.7], dtype=np.float32)],
+        cloud_pt,
         ["Electron Cloud / Orbital"],
-        point_size=0,
+        point_color="white",
+        point_size=5,
         font_size=16,
         text_color="white",
         shape="rounded_rect",
-        shape_opacity=0.3,
+        shape_color="black",
+        shape_opacity=0.4,
         always_visible=True,
-        show_points=False,
     )
 
     plotter.add_text(title, font_size=14, color="white")
@@ -161,30 +168,35 @@ def render_orbital_isosurface(
     if show_nucleus:
         nucleus = pv.Sphere(radius=0.15, center=(0.0, 0.0, 0.0))
         plotter.add_mesh(nucleus, color="yellow", opacity=1.0)
+        
+        nuc_pt = np.array([[0.0, 0.0, 0.2]], dtype=np.float32)
         plotter.add_point_labels(
-            [np.array([0.0, 0.0, 0.0], dtype=np.float32)],
+            nuc_pt,
             ["Nucleus"],
-            point_size=0,
+            point_color="yellow",
+            point_size=5,
             font_size=18,
             text_color="yellow",
-            shape=None,
+            shape="rounded_rect",
+            shape_color="black",
+            shape_opacity=0.4,
             always_visible=True,
-            show_points=False,
-            margin=10,
         )
 
     # Add label for the Isosurface/Cloud
     extent_x = float(np.max(np.abs(x)))
+    cloud_pt = np.array([[extent_x * 0.6, extent_x * 0.6, extent_x * 0.6]], dtype=np.float32)
     plotter.add_point_labels(
-        [np.array([extent_x * 0.7, extent_x * 0.7, extent_x * 0.7], dtype=np.float32)],
+        cloud_pt,
         ["Probability Density Isosurface"],
-        point_size=0,
+        point_color="white",
+        point_size=5,
         font_size=16,
         text_color="white",
         shape="rounded_rect",
-        shape_opacity=0.3,
+        shape_color="black",
+        shape_opacity=0.4,
         always_visible=True,
-        show_points=False,
     )
 
     plotter.add_text(title, font_size=14, color="white")
