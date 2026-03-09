@@ -67,6 +67,35 @@ def render_orbital(
     if show_nucleus:
         nucleus = pv.Sphere(radius=0.15, center=(0, 0, 0))
         plotter.add_mesh(nucleus, color="yellow", opacity=1.0)
+        plotter.add_point_labels(
+            [(0, 0, 0)],
+            ["Nucleus"],
+            point_size=0,
+            font_size=18,
+            text_color="yellow",
+            shape=None,
+            always_visible=True,
+            show_points=False,
+            margin=10,
+        )
+
+    # Estimate extents for standard label placement
+    try:
+        max_extent = np.max(np.abs(points))
+    except ValueError:
+        max_extent = 10.0
+    
+    plotter.add_point_labels(
+        [(max_extent * 0.7, max_extent * 0.7, max_extent * 0.7)],
+        ["Electron Cloud / Orbital"],
+        point_size=0,
+        font_size=16,
+        text_color="white",
+        shape="rounded_rect",
+        shape_opacity=0.3,
+        always_visible=True,
+        show_points=False,
+    )
 
     plotter.add_text(title, font_size=14, color="white")
     plotter.add_axes(color="white")
@@ -132,6 +161,31 @@ def render_orbital_isosurface(
     if show_nucleus:
         nucleus = pv.Sphere(radius=0.15, center=(0, 0, 0))
         plotter.add_mesh(nucleus, color="yellow", opacity=1.0)
+        plotter.add_point_labels(
+            [(0, 0, 0)],
+            ["Nucleus"],
+            point_size=0,
+            font_size=18,
+            text_color="yellow",
+            shape=None,
+            always_visible=True,
+            show_points=False,
+            margin=10,
+        )
+
+    # Add label for the Isosurface/Cloud
+    extent_x = np.max(np.abs(x))
+    plotter.add_point_labels(
+        [(extent_x * 0.7, extent_x * 0.7, extent_x * 0.7)],
+        ["Probability Density Isosurface"],
+        point_size=0,
+        font_size=16,
+        text_color="white",
+        shape="rounded_rect",
+        shape_opacity=0.3,
+        always_visible=True,
+        show_points=False,
+    )
 
     plotter.add_text(title, font_size=14, color="white")
     plotter.add_axes(color="white")
