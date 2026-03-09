@@ -61,9 +61,11 @@ def quick_plot(
     plotter.add_axes(color="white")
 
     if screenshot:
-        plotter.show(screenshot=screenshot, auto_close=True)
+        plotter.show(screenshot=screenshot, auto_close=False)
     else:
-        plotter.show()
+        plotter.show(auto_close=False)
+    
+    plotter.close()
 
 
 # ---------------------------------------------------------------------------

@@ -72,9 +72,11 @@ def render_orbital(
     plotter.add_axes(color="white")
 
     if screenshot:
-        plotter.show(screenshot=screenshot, auto_close=True)
+        plotter.show(screenshot=screenshot, auto_close=False)
     else:
-        plotter.show()
+        plotter.show(auto_close=False)
+    
+    plotter.close()
 
 
 def render_orbital_isosurface(
@@ -135,6 +137,8 @@ def render_orbital_isosurface(
     plotter.add_axes(color="white")
 
     if screenshot:
-        plotter.show(screenshot=screenshot, auto_close=True)
+        plotter.show(screenshot=screenshot, auto_close=False)
     else:
-        plotter.show()
+        plotter.show(auto_close=False)
+    
+    plotter.close()
