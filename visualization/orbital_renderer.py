@@ -65,10 +65,10 @@ def render_orbital(
     )
 
     if show_nucleus:
-        nucleus = pv.Sphere(radius=0.15, center=(0, 0, 0))
+        nucleus = pv.Sphere(radius=0.15, center=(0.0, 0.0, 0.0))
         plotter.add_mesh(nucleus, color="yellow", opacity=1.0)
         plotter.add_point_labels(
-            [(0, 0, 0)],
+            [np.array([0.0, 0.0, 0.0], dtype=np.float32)],
             ["Nucleus"],
             point_size=0,
             font_size=18,
@@ -81,12 +81,12 @@ def render_orbital(
 
     # Estimate extents for standard label placement
     try:
-        max_extent = np.max(np.abs(points))
+        max_extent = float(np.max(np.abs(points)))
     except ValueError:
         max_extent = 10.0
     
     plotter.add_point_labels(
-        [(max_extent * 0.7, max_extent * 0.7, max_extent * 0.7)],
+        [np.array([max_extent * 0.7, max_extent * 0.7, max_extent * 0.7], dtype=np.float32)],
         ["Electron Cloud / Orbital"],
         point_size=0,
         font_size=16,
@@ -159,10 +159,10 @@ def render_orbital_isosurface(
         )
 
     if show_nucleus:
-        nucleus = pv.Sphere(radius=0.15, center=(0, 0, 0))
+        nucleus = pv.Sphere(radius=0.15, center=(0.0, 0.0, 0.0))
         plotter.add_mesh(nucleus, color="yellow", opacity=1.0)
         plotter.add_point_labels(
-            [(0, 0, 0)],
+            [np.array([0.0, 0.0, 0.0], dtype=np.float32)],
             ["Nucleus"],
             point_size=0,
             font_size=18,
@@ -174,9 +174,9 @@ def render_orbital_isosurface(
         )
 
     # Add label for the Isosurface/Cloud
-    extent_x = np.max(np.abs(x))
+    extent_x = float(np.max(np.abs(x)))
     plotter.add_point_labels(
-        [(extent_x * 0.7, extent_x * 0.7, extent_x * 0.7)],
+        [np.array([extent_x * 0.7, extent_x * 0.7, extent_x * 0.7], dtype=np.float32)],
         ["Probability Density Isosurface"],
         point_size=0,
         font_size=16,
