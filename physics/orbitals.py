@@ -32,6 +32,10 @@ ORBITAL_CATALOG: dict[str, tuple[int, int, int]] = {
     "3d+1":  (3, 2, 1),
     "3d+2":  (3, 2, 2),
     "3d":    (3, 2, 0),      # alias
+    # Real orbital aliases for quantum measurement mapping
+    "2px":   (2, 1, 1),
+    "2py":   (2, 1, -1),
+    "2pz":   (2, 1, 0),
     # n = 4
     "4s":    (4, 0, 0),
     "4p":    (4, 1, 0),

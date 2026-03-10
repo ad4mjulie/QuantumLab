@@ -3,7 +3,11 @@ from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from core import OrbitalParams, SimulationResult, GroverParams, VQEParams
+from core import (
+    OrbitalParams, SimulationResult, GroverParams, VQEParams,
+    GroverResult, VQEResult, OrbitalInfo, OrbitalListResponse,
+    HydrogenMeasurementParams, HydrogenMeasurementResult
+)
 from core import settings
 from core.exceptions import QuantumLabError, ResourceNotFoundError, ValidationError
 from services import PhysicsService, QuantumService
@@ -35,19 +39,10 @@ async def quantumlab_exception_handler(request: Request, exc: QuantumLabError):
 def health() -> Dict[str, str]:
     return {"status": "ok", "service": "QuantumLab"}
 
-class OrbitalInfo(BaseModel):
-    name: str
-    n: int
-    l: int
-    m: int
-
-class OrbitalListResponse(BaseModel):
-    orbitals: List[OrbitalInfo]
-
 @app.get("/orbitals", response_model=OrbitalListResponse)
 def orbitals(service: PhysicsService = Depends(get_physics_service)):
     """List all available hydrogen orbitals."""
-    return {"orbitals": service.list_available_orbitals()}
+    return OrbitalListResponse(orbitals=service.list_available_orbitals())
 
 @app.post("/simulate/orbital", response_model=SimulationResult)
 def simulate_orbital(
@@ -57,11 +52,6 @@ def simulate_orbital(
     """Run orbital simulation via PhysicsService."""
     return service.run_orbital_simulation(req)
 
-class GroverResult(BaseModel):
-    counts: Dict[str, int]
-    probabilities: Dict[str, float]
-    found: str
-
 @app.post("/simulate/grover", response_model=GroverResult)
 def simulate_grover(
     req: GroverParams, 
@@ -70,11 +60,6 @@ def simulate_grover(
     """Run Grover algorithm via QuantumService."""
     return service.run_grover(req)
 
-class VQEResult(BaseModel):
-    optimal_energy: float
-    n_iterations: int
-    history: List[float]
-
 @app.post("/simulate/vqe", response_model=VQEResult)
 def simulate_vqe(
     req: VQEParams, 
@@ -82,6 +67,14 @@ def simulate_vqe(
 ):
     """Run VQE via QuantumService."""
     return service.run_vqe(req)
+
+@app.post("/simulate/hydrogen/measure", response_model=HydrogenMeasurementResult)
+def measure_hydrogen(
+    req: HydrogenMeasurementParams,
+    service: QuantumService = Depends(get_quantum_service)
+):
+    """Perform a quantum measurement of the hydrogen electron register."""
+    return service.measure_electron(seed=req.seed)
 
 @app.get("/", response_class=HTMLResponse)
 def web_root():

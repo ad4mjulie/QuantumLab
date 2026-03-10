@@ -15,6 +15,10 @@ try:
 except ImportError:
     pv = None  # graceful fallback if PyVista unavailable
 
+from physics.hydrogen_solver import HydrogenSolver
+from physics.orbitals import get_orbital
+from quantum.hydrogen_register import measure_electron
+
 
 def render_orbital(
     points: NDArray,
@@ -104,8 +108,59 @@ def render_orbital(
         always_visible=True,
     )
 
-    plotter.add_text(title, font_size=14, color="white")
+    plotter.add_text(title, font_size=14, color="white", name="plot_title")
     plotter.add_axes(color="white")
+
+    # ------------------------------------------------------------------
+    # "Measure Electron" Keyboard Shortcut (H)
+    # ------------------------------------------------------------------
+    
+    def on_measure():
+        """Callback to perform quantum measurement and collapse state."""
+        # Visual feedback for start
+        plotter.add_text(
+            "MEASURING...", position="lower_right", font_size=12, 
+            color="yellow", name="status_label"
+        )
+        plotter.render() # Force update
+        
+        collapsed_name = measure_electron()
+        print(f"\n  [Quantum Measurement] Collapsed to: {collapsed_name}")
+        
+        # Optimize performance: use half the points for the reactive update if n > 50k
+        target_pts = len(points)
+        if target_pts > 40_000:
+            target_pts = 40_000
+            
+        # Re-solve for the collapsed orbital
+        solver = HydrogenSolver()
+        n, l, m = get_orbital(collapsed_name)
+        new_points, new_density = solver.sample_points_mc(n, l, m, n_points=target_pts)
+        
+        # Update mesh data
+        cloud.points = new_points
+        cloud["scalars"] = new_density
+        
+        # Update UI labels
+        plotter.add_text(
+            f"{collapsed_name} (Collapsed State)", 
+            font_size=14, color="cyan", name="plot_title"
+        )
+        plotter.add_text(
+            f"MEASURED: {collapsed_name} ({target_pts:,} pts)",
+            position="lower_right",
+            font_size=12,
+            color="lime",
+            name="status_label"
+        )
+
+    plotter.add_key_event("h", on_measure)
+    plotter.add_text(
+        "Press 'H' to Measure Electron", 
+        position="upper_right", 
+        font_size=10, 
+        color="#8b949e"
+    )
 
     if screenshot:
         plotter.show(screenshot=screenshot, auto_close=False)
@@ -199,8 +254,39 @@ def render_orbital_isosurface(
         always_visible=True,
     )
 
-    plotter.add_text(title, font_size=14, color="white")
+    plotter.add_text(title, font_size=14, color="white", name="plot_title")
     plotter.add_axes(color="white")
+
+    # ------------------------------------------------------------------
+    # "Measure Electron" Keyboard Shortcut (H)
+    # ------------------------------------------------------------------
+    
+    def on_measure_iso():
+        """Callback for isosurface measurement."""
+        collapsed_name = measure_electron()
+        print(f"\n  [Quantum Measurement] Collapsed to: {collapsed_name}")
+        
+        solver = HydrogenSolver()
+        n, l, m = get_orbital(collapsed_name)
+        
+        # Isosurface requires grid data, not points
+        res = solver.compute_orbital(n, l, m, grid_size=len(x))
+        new_density = res["density"]
+        
+        # Update the contour by regenerating it from new grid data
+        # Note: In PyVista we often replace the actor or clear and re-add
+        grid["density"] = new_density.flatten(order="F")
+        new_contour = grid.contour([iso_value], scalars="density")
+        
+        # Update existing contour mesh
+        contour.copy_from(new_contour)
+        
+        plotter.add_text(
+            f"{collapsed_name} (Isosurface)", 
+            font_size=14, color="cyan", name="plot_title"
+        )
+
+    plotter.add_key_event("h", on_measure_iso)
 
     if screenshot:
         plotter.show(screenshot=screenshot, auto_close=False)

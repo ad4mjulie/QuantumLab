@@ -21,7 +21,7 @@ def test_grover_determinism():
     res1 = service.run_grover(params)
     res2 = service.run_grover(params)
     
-    assert res1["counts"] == res2["counts"]
+    assert res1.counts == res2.counts
 
 def test_vqe_determinism():
     service = QuantumService()
@@ -30,5 +30,5 @@ def test_vqe_determinism():
     res1 = service.run_vqe(params)
     res2 = service.run_vqe(params)
     
-    assert np.allclose(res1["optimal_energy"], res2["optimal_energy"])
-    assert res1["history"] == res2["history"]
+    assert np.allclose(res1.optimal_energy, res2.optimal_energy)
+    assert res1.history == res2.history

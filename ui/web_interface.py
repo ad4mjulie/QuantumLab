@@ -74,12 +74,14 @@ def get_html() -> str:
   <h2>Hydrogen Orbital Simulation</h2>
   <label for="orbital-name">Orbital</label>
   <select id="orbital-name">
+    <option>Superposition</option>
     <option>1s</option><option>2s</option><option>2p0</option><option>2p+1</option><option>2p-1</option>
     <option>3s</option><option>3p0</option><option>3d0</option><option>3d+1</option><option>3d+2</option>
   </select>
   <label for="orbital-pts">Sample points</label>
   <input id="orbital-pts" type="number" value="10000" min="1000" max="200000" />
   <button onclick="runOrbital()">Run simulation</button>
+  <button id="btn-measure" onclick="measureElectron()" style="background:var(--accent2); margin-left: 0.5rem">Measure Electron</button>
   <div id="orbital-result" class="result" style="display:none"></div>
 </div>
 
@@ -168,6 +170,45 @@ async function runVQE() {
     + `Error:              ${Math.abs(data.optimal_energy - (-1)).toFixed(6)}\n`
     + `Function evals:     ${data.n_iterations}`;
 }
+async function measureElectron() {
+  const el = document.getElementById('orbital-result');
+  const btn = document.getElementById('btn-measure');
+  el.style.display = 'block'; el.textContent = 'Measuring quantum state...';
+  btn.disabled = true;
+  
+  try {
+    const data = await post('/simulate/hydrogen/measure', {});
+    el.textContent = `Quantum Measurement Result:\n`
+      + `---------------------------\n`
+      + `Measured Bitstring: |${data.bitstring}⟩\n`
+      + `Wavefunction Collapsed to: ${data.orbital}\n\n`
+      + `➤ Triggering visualization update for ${data.orbital}...`;
+    
+    // Auto-run simulation for the collapsed orbital
+    document.getElementById('orbital-name').value = data.orbital;
+    await runOrbital();
+    
+    el.textContent = `Quantum Measurement Result:\n`
+      + `---------------------------\n`
+      + `Measured Bitstring: |${data.bitstring}⟩\n`
+      + `Wavefunction Collapsed to: ${data.orbital}\n\n`
+      + `➤ State collapsed. Displaying ${data.orbital} density cloud.`;
+      
+  } catch (err) {
+    el.textContent = 'Error during measurement: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'h') {
+    // Prevent triggering if user is typing in an input
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    measureElectron();
+  }
+});
 </script>
 </body>
 </html>"""

@@ -12,6 +12,18 @@ class OrbitalParams(BaseModel):
     seed: Optional[int] = Field(None, description="Random seed for reproducibility")
 
 
+class HydrogenMeasurementParams(BaseModel):
+    """Parameters for one-shot quantum measurement of the electron."""
+    seed: Optional[int] = Field(None, description="Random seed for measurement")
+
+
+class HydrogenMeasurementResult(BaseModel):
+    """Result of a single-shot quantum measurement of the electron."""
+    orbital: str = Field(..., description="The collapsed orbital name")
+    bitstring: str = Field(..., description="The measured bitstring")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
 class SimulationResult(BaseModel):
     """Generic container for simulation output point clouds."""
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -40,5 +52,37 @@ class VQEParams(BaseModel):
     shots: int = 4096
     seed: Optional[int] = None
 
+class GroverResult(BaseModel):
+    """Result of Grover's search algorithm."""
+    counts: Dict[str, int]
+    probabilities: Dict[str, float]
+    found: str
+
+
+class VQEResult(BaseModel):
+    """Result of VQE optimization."""
+    optimal_energy: float
+    n_iterations: int
+    history: List[float]
+
+
+class OrbitalInfo(BaseModel):
+    """Metadata for an available orbital."""
+    name: str
+    n: int
+    l: int
+    m: int
+
+
+class OrbitalListResponse(BaseModel):
+    """Wrapper for the list of available orbitals."""
+    orbitals: List[OrbitalInfo]
+
+
 # Ensure all types are resolved for Pydantic V2
 SimulationResult.model_rebuild()
+GroverResult.model_rebuild()
+VQEResult.model_rebuild()
+OrbitalInfo.model_rebuild()
+OrbitalListResponse.model_rebuild()
+HydrogenMeasurementResult.model_rebuild()

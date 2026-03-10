@@ -20,7 +20,7 @@ from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 
 
-_SIMULATOR = AerSimulator()
+
 
 
 class VQESolver:
@@ -37,7 +37,6 @@ class VQESolver:
         self.depth = depth
         self.shots = shots
         self.seed = seed
-        self._simulator = AerSimulator()
 
     # ------------------------------------------------------------------
     # Ansatz
@@ -74,10 +73,12 @@ class VQESolver:
         Measure ⟨Z⊗Z⟩ by running in the computational basis and assigning
         eigenvalues  +1 / −1  to each bitstring.
         """
+        from quantum.circuits import _SIMULATOR
+        
         meas_qc = qc.copy()
         meas_qc.measure_all()
 
-        job = self._simulator.run(meas_qc, shots=self.shots, seed_simulator=self.seed)
+        job = _SIMULATOR.run(meas_qc, shots=self.shots, seed_simulator=self.seed)
         counts = job.result().get_counts()
 
         expectation = 0.0

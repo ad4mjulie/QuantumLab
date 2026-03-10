@@ -24,5 +24,5 @@ def test_quantum_service_grover():
     params = GroverParams(n_qubits=3, target="101", shots=512, seed=42)
     
     result = service.run_grover(params)
-    assert result["found"] == "101"
-    assert result["probabilities"]["101"] > 0.8
+    assert result.found == "101"
+    assert result.probabilities["101"] > 0.8

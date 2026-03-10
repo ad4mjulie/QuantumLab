@@ -7,8 +7,18 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Packaging
+*.egg-info/
+build/
+dist/
+
+# IDEs
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
+
+# Tests
+.pytest_cache/

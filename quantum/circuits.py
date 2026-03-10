@@ -15,9 +15,13 @@ from qiskit_aer import AerSimulator
 
 
 # ---------------------------------------------------------------------------
-# Simulator singleton
+# Simulator singleton (Standardized for RC stability)
 # ---------------------------------------------------------------------------
-_SIMULATOR = AerSimulator()
+_SIMULATOR = AerSimulator(
+    method="statevector",
+    max_parallel_threads=1,
+    max_parallel_experiments=1
+)
 
 
 def run_circuit(
@@ -27,16 +31,7 @@ def run_circuit(
 ) -> dict[str, int]:
     """
     Execute a quantum circuit on the Aer simulator and return raw counts.
-
-    Parameters
-    ----------
-    circuit : QuantumCircuit – must already contain measurements
-    shots   : int            – number of measurement shots
-    seed     : int            – optional seed for reproducibility
-
-    Returns
-    -------
-    counts : dict[str, int]  – e.g. {'00': 512, '11': 512}
+    Uses a shared, stable simulator instance with conservative threading.
     """
     job = _SIMULATOR.run(circuit, shots=shots, seed_simulator=seed)
     return job.result().get_counts()
