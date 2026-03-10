@@ -60,6 +60,42 @@ def quick_plot(
     plotter.add_text(title, font_size=12, color="white")
     plotter.add_axes(color="white")
 
+    # Label the potential well center
+    center_pt = np.array([[0.0, 0.0, 0.2]], dtype=np.float32)
+    plotter.add_point_labels(
+        center_pt,
+        ["Potential Center"],
+        point_color="yellow",
+        point_size=5,
+        font_size=16,
+        text_color="yellow",
+        shape="rounded_rect",
+        shape_color="black",
+        shape_opacity=0.4,
+        always_visible=True,
+    )
+
+    # Estimate extents for the probability cloud label
+    try:
+        max_extent = float(np.max(np.abs(points)))
+    except ValueError:
+        max_extent = 10.0
+    
+    # Place wave-function label
+    cloud_pt = np.array([[max_extent * 0.6, max_extent * 0.6, max_extent * 0.6]], dtype=np.float32)
+    plotter.add_point_labels(
+        cloud_pt,
+        ["Wavefunction Cloud"],
+        point_color="white",
+        point_size=5,
+        font_size=14,
+        text_color="white",
+        shape="rounded_rect",
+        shape_color="black",
+        shape_opacity=0.4,
+        always_visible=True,
+    )
+
     if screenshot:
         plotter.show(screenshot=screenshot, auto_close=False)
     else:
