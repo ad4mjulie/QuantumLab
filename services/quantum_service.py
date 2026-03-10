@@ -29,9 +29,9 @@ class QuantumService:
         solver = VQESolver(
             n_qubits=params.n_qubits, 
             depth=params.depth, 
-            shots=params.shots
+            shots=params.shots,
+            seed=params.seed
         )
-        # Note: we need to update VQESolver to support seeds if needed
         result = solver.optimize(maxiter=params.maxiter)
         return {
             "optimal_energy": result["optimal_energy"],

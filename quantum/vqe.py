@@ -26,10 +26,18 @@ _SIMULATOR = AerSimulator()
 class VQESolver:
     """Simple VQE solver for diagonal Hamiltonians."""
 
-    def __init__(self, n_qubits: int = 2, depth: int = 2, shots: int = 4096):
+    def __init__(
+        self, 
+        n_qubits: int = 2, 
+        depth: int = 2, 
+        shots: int = 4096,
+        seed: int | None = None
+    ):
         self.n_qubits = n_qubits
         self.depth = depth
         self.shots = shots
+        self.seed = seed
+        self._simulator = AerSimulator()
 
     # ------------------------------------------------------------------
     # Ansatz
@@ -65,20 +73,16 @@ class VQESolver:
         """
         Measure ⟨Z⊗Z⟩ by running in the computational basis and assigning
         eigenvalues  +1 / −1  to each bitstring.
-
-        For a generic diagonal Hamiltonian expressed in the Z basis,
-        the eigenvalue of bitstring b is  ∏ᵢ (−1)^{bᵢ}.
         """
         meas_qc = qc.copy()
         meas_qc.measure_all()
 
-        job = _SIMULATOR.run(meas_qc, shots=self.shots)
+        job = self._simulator.run(meas_qc, shots=self.shots, seed_simulator=self.seed)
         counts = job.result().get_counts()
 
         expectation = 0.0
         total = sum(counts.values())
         for bitstring, count in counts.items():
-            # eigenvalue = product of (-1)^bit
             eigenvalue = 1
             for bit in bitstring.replace(" ", ""):
                 eigenvalue *= (-1) ** int(bit)
@@ -105,24 +109,21 @@ class VQESolver:
     ) -> dict:
         """
         Run the full VQE optimisation.
-
-        Returns
-        -------
-        dict with keys:
-            optimal_params : NDArray  – best parameter vector
-            optimal_energy : float    – minimised energy
-            n_iterations   : int
-            history        : list[float] – energy at each iteration
         """
         n_params = self.n_qubits * self.depth
-        initial_params = np.random.uniform(0, 2 * np.pi, n_params)
+        
+        # Reproducible initial parameters
+        if self.seed is not None:
+            rng = np.random.default_rng(self.seed)
+            initial_params = rng.uniform(0, 2 * np.pi, n_params)
+        else:
+            initial_params = np.random.uniform(0, 2 * np.pi, n_params)
 
         history: list[float] = []
 
         def _callback(xk: NDArray) -> None:
             energy = self.cost_function(xk)
             history.append(float(energy))
-            # print(f"  Iteration {len(history)}: {energy:.6f}") # debug
 
         result = minimize(
             self.cost_function,
@@ -132,7 +133,6 @@ class VQESolver:
             options={"maxiter": maxiter},
         )
 
-        # Ensure final energy is in history
         final_energy = float(result.fun)
         if not history or abs(history[-1] - final_energy) > 1e-6:
             history.append(final_energy)

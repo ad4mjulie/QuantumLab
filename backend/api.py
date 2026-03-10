@@ -1,14 +1,10 @@
-"""
-FastAPI backend for the Quantum Simulation Lab (v2).
-Utilizes a Service Layer for clean separation of concerns.
-"""
-
-from __future__ import annotations
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import HTMLResponse
+from typing import List, Dict
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from core import OrbitalParams, SimulationResult, GroverParams, VQEParams
 from core import settings
+from core.exceptions import QuantumLabError, ResourceNotFoundError, ValidationError
 from services import PhysicsService, QuantumService
 
 app = FastAPI(
@@ -17,25 +13,31 @@ app = FastAPI(
 )
 
 # Shared services
-def get_physics_service(): return PhysicsService()
-def get_quantum_service(): return QuantumService()
+def get_physics_service() -> PhysicsService: return PhysicsService()
+def get_quantum_service() -> QuantumService: return QuantumService()
 
+@app.exception_handler(QuantumLabError)
+async def quantumlab_exception_handler(request: Request, exc: QuantumLabError):
+    if isinstance(exc, ResourceNotFoundError):
+        status_code = 404
+    elif isinstance(exc, ValidationError):
+        status_code = 400
+    else:
+        status_code = 500
+    
+    return JSONResponse(
+        status_code=status_code,
+        content={"detail": str(exc), "type": exc.__class__.__name__},
+    )
 
 @app.get("/health")
-def health():
+def health() -> Dict[str, str]:
     return {"status": "ok", "service": "QuantumLab"}
 
-
-@app.get("/orbitals")
-def orbitals():
-    from physics.orbitals import ORBITAL_CATALOG
-    return {
-        "orbitals": [
-            {"name": name, "n": q[0], "l": q[1], "m": q[2]}
-            for name, q in ORBITAL_CATALOG.items()
-        ]
-    }
-
+@app.get("/orbitals", response_model=Dict[str, List[Dict[str, Any]]])
+def orbitals(service: PhysicsService = Depends(get_physics_service)):
+    """List all available hydrogen orbitals."""
+    return {"orbitals": service.list_available_orbitals()}
 
 @app.post("/simulate/orbital", response_model=SimulationResult)
 def simulate_orbital(
@@ -43,13 +45,9 @@ def simulate_orbital(
     service: PhysicsService = Depends(get_physics_service)
 ):
     """Run orbital simulation via PhysicsService."""
-    try:
-        return service.run_orbital_simulation(req)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.run_orbital_simulation(req)
 
-
-@app.post("/simulate/grover")
+@app.post("/simulate/grover", response_model=Dict[str, Any])
 def simulate_grover(
     req: GroverParams, 
     service: QuantumService = Depends(get_quantum_service)
@@ -57,15 +55,13 @@ def simulate_grover(
     """Run Grover algorithm via QuantumService."""
     return service.run_grover(req)
 
-
-@app.post("/simulate/vqe")
+@app.post("/simulate/vqe", response_model=Dict[str, Any])
 def simulate_vqe(
     req: VQEParams, 
     service: QuantumService = Depends(get_quantum_service)
 ):
     """Run VQE via QuantumService."""
     return service.run_vqe(req)
-
 
 @app.get("/", response_class=HTMLResponse)
 def web_root():

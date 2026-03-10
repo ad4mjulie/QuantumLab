@@ -143,6 +143,21 @@ Colour can be mapped to **probability density** (intensity) or **wavefunction ph
 | `POST` | `/simulate/vqe` | Run VQE optimisation |
 | `GET`  | `/` | Web dashboard |
 
+---
+
+## Technical Improvements (v2.1)
+
+### Scientific Determinism
+All solvers now support a `seed` parameter for reproducible research. This ensures:
+- **Physics**: Identical Monte-Carlo point clouds for the same quantum numbers and seed.
+- **Quantum**: Consistent circuit execution and measurement counts on the Aer simulator.
+- **VQE**: Deterministic initial parameter generation and simulator runs.
+
+### Robust Architecture
+- **Service Layer**: All business logic is encapsulated in `PhysicsService` and `QuantumService`.
+- **API Quality**: FastAPI endpoints use explicit Pydantic response models and global exception mapping for robust error reporting.
+- **Packaging**: The repository is structured as a standard Python package with `pyproject.toml` supporting `pip install .`.
+
 Full interactive docs are available at `/docs` (Swagger UI).
 
 ---

@@ -19,7 +19,10 @@ class SimulationResult(BaseModel):
     energy_ev: Optional[float] = None
     points: List[List[float]] = Field(..., description="N x 3 list of coordinates")
     values: List[float] = Field(..., description="Scalar values at each point (density or phase)")
-    metadata: Dict = {}
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class GroverParams(BaseModel):

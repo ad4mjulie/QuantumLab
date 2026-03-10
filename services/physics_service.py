@@ -11,8 +11,16 @@ from physics.orbitals import get_orbital
 class PhysicsService:
     """Orchestrates physics simulations and bundles results."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.solver = HydrogenSolver()
+
+    def list_available_orbitals(self) -> list[dict[str, any]]:
+        """Return a list of all supported hydrogen orbitals."""
+        from physics.orbitals import ORBITAL_CATALOG
+        return [
+            {"name": name, "n": q[0], "l": q[1], "m": q[2]}
+            for name, q in ORBITAL_CATALOG.items()
+        ]
 
     def run_orbital_simulation(self, params: OrbitalParams) -> SimulationResult:
         """Run a hydrogen orbital simulation and return bundled result."""
@@ -21,10 +29,7 @@ class PhysicsService:
         except KeyError:
             raise ResourceNotFoundError(f"Orbital '{params.name}' not found.")
 
-        # Seed handling
-        rng = np.random.default_rng(params.seed)
-        
-        # We'll need to update the solver to accept an rng/seed
+        # Run Monte-Carlo sampling
         points, density = self.solver.sample_points_mc(
             n, l, m, n_points=params.n_points, seed=params.seed
         )
