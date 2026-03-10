@@ -1,6 +1,7 @@
 """Service layer for physics simulations."""
 
 from __future__ import annotations
+from typing import Any
 import numpy as np
 from core.models import OrbitalParams, SimulationResult
 from core.exceptions import ResourceNotFoundError

@@ -1,28 +1,28 @@
 """Shared domain models and schemas for QuantumLab."""
 
 from __future__ import annotations
-from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+import typing
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class OrbitalParams(BaseModel):
     """Parameters for hydrogen orbital simulation."""
     name: str = Field(..., description="Orbital name (e.g., '2p0')")
-    n_points: int = Field(50000, ge=1000, le=500000)
+    n_points: int = Field(100000, ge=1000, le=1000000)
     seed: Optional[int] = Field(None, description="Random seed for reproducibility")
 
 
 class SimulationResult(BaseModel):
     """Generic container for simulation output point clouds."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     title: str
     n_points: int
     energy_ev: Optional[float] = None
     points: List[List[float]] = Field(..., description="N x 3 list of coordinates")
     values: List[float] = Field(..., description="Scalar values at each point (density or phase)")
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        arbitrary_types_allowed = True
+    metadata: typing.Dict[str, typing.Any] = Field(default_factory=dict)
 
 
 class GroverParams(BaseModel):
@@ -40,3 +40,6 @@ class VQEParams(BaseModel):
     maxiter: int = 200
     shots: int = 4096
     seed: Optional[int] = None
+
+# Ensure all types are resolved for Pydantic V2
+SimulationResult.model_rebuild()

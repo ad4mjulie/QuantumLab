@@ -43,8 +43,8 @@ class CLInterface:
 
         print("\n  Available orbitals:", ", ".join(list_orbitals()))
         name = input("  Enter orbital name (e.g. 2p0): ").strip()
-        n_pts = input("  Number of sample points [50000]: ").strip()
-        n_pts = int(n_pts) if n_pts else 50_000
+        n_pts = input("  Number of sample points [100000]: ").strip()
+        n_pts = int(n_pts) if n_pts else 100_000
         seed = input("  Seed (optional): ").strip()
         seed = int(seed) if seed else None
 
@@ -79,7 +79,7 @@ class CLInterface:
         nx = int(input("  nx [0]: ").strip() or "0")
         ny = int(input("  ny [0]: ").strip() or "0")
         nz = int(input("  nz [0]: ").strip() or "0")
-        n_pts = int(input("  Number of sample points [50000]: ").strip() or "50000")
+        n_pts = int(input("  Number of sample points [100000]: ").strip() or "100000")
 
         energy = harmonic_energy(nx) + harmonic_energy(ny) + harmonic_energy(nz)
         print(f"\n  ➤ E = {energy:.2f} ℏω")
