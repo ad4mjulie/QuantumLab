@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -34,7 +35,16 @@ async def quantumlab_exception_handler(request: Request, exc: QuantumLabError):
 def health() -> Dict[str, str]:
     return {"status": "ok", "service": "QuantumLab"}
 
-@app.get("/orbitals", response_model=Dict[str, List[Dict[str, Any]]])
+class OrbitalInfo(BaseModel):
+    name: str
+    n: int
+    l: int
+    m: int
+
+class OrbitalListResponse(BaseModel):
+    orbitals: List[OrbitalInfo]
+
+@app.get("/orbitals", response_model=OrbitalListResponse)
 def orbitals(service: PhysicsService = Depends(get_physics_service)):
     """List all available hydrogen orbitals."""
     return {"orbitals": service.list_available_orbitals()}
@@ -47,7 +57,12 @@ def simulate_orbital(
     """Run orbital simulation via PhysicsService."""
     return service.run_orbital_simulation(req)
 
-@app.post("/simulate/grover", response_model=Dict[str, Any])
+class GroverResult(BaseModel):
+    counts: Dict[str, int]
+    probabilities: Dict[str, float]
+    found: str
+
+@app.post("/simulate/grover", response_model=GroverResult)
 def simulate_grover(
     req: GroverParams, 
     service: QuantumService = Depends(get_quantum_service)
@@ -55,7 +70,12 @@ def simulate_grover(
     """Run Grover algorithm via QuantumService."""
     return service.run_grover(req)
 
-@app.post("/simulate/vqe", response_model=Dict[str, Any])
+class VQEResult(BaseModel):
+    optimal_energy: float
+    n_iterations: int
+    history: List[float]
+
+@app.post("/simulate/vqe", response_model=VQEResult)
 def simulate_vqe(
     req: VQEParams, 
     service: QuantumService = Depends(get_quantum_service)

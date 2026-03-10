@@ -15,7 +15,7 @@ class QuantumService:
     def run_grover(self, params: GroverParams) -> dict:
         """Run Grover's algorithm and return counts and probabilities."""
         counts = self.grover.run(
-            params.n_qubits, params.target, shots=params.shots
+            params.n_qubits, params.target, shots=params.shots, seed=params.seed
         )
         total = sum(counts.values())
         return {

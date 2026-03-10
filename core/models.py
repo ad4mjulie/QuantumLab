@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from typing import List, Optional, Dict, Any
-import typing
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -22,7 +21,7 @@ class SimulationResult(BaseModel):
     energy_ev: Optional[float] = None
     points: List[List[float]] = Field(..., description="N x 3 list of coordinates")
     values: List[float] = Field(..., description="Scalar values at each point (density or phase)")
-    metadata: typing.Dict[str, typing.Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class GroverParams(BaseModel):

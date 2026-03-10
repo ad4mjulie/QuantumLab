@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.special import sph_harm, factorial, assoc_laguerre
+from scipy.special import sph_harm_y, factorial, assoc_laguerre
 
 
 # ---------------------------------------------------------------------------
@@ -88,8 +88,8 @@ def spherical_harmonic(
     -------
     Y : complex array
     """
-    # scipy convention: sph_harm(m, l, phi, theta)
-    return sph_harm(m, l, phi, theta)
+    # scipy 1.15+ convention: sph_harm_y(l, m, theta, phi)
+    return sph_harm_y(l, m, theta, phi)
 
 
 # ---------------------------------------------------------------------------

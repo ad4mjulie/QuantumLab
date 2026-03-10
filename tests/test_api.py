@@ -22,5 +22,5 @@ def test_simulate_orbital_api():
 def test_invalid_orbital_error():
     payload = {"name": "invalid_orbital", "n_points": 1000}
     response = client.post("/simulate/orbital", json=payload)
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()

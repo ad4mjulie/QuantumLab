@@ -15,7 +15,7 @@ class PhysicsService:
     def __init__(self) -> None:
         self.solver = HydrogenSolver()
 
-    def list_available_orbitals(self) -> list[dict[str, any]]:
+    def list_available_orbitals(self) -> list[dict[str, Any]]:
         """Return a list of all supported hydrogen orbitals."""
         from physics.orbitals import ORBITAL_CATALOG
         return [
